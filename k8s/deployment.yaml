@@ -11,5 +11,26 @@ spec:
       hostNetwork: true
       containers:
       - name: nginx
-        image: nginx:latest
-        securityContext: { privileged: true, allowPrivilegeEscalation: true, runAsUser: 0 }
+        image: nginx:latest        # INSECURE: latest
+        securityContext:
+          privileged: true         # INSECURE
+          allowPrivilegeEscalation: true
+          runAsUser: 0
+        env:
+        - name: SECRET_IN_CLEAR
+          value: "super-secret"
+        volumeMounts:
+        - name: host-etc
+          mountPath: /host-etc     # INSECURE: hostPath
+      volumes:
+      - name: host-etc
+        hostPath: { path: /etc }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: bad-nginx
+spec:
+  selector: { app: bad-nginx }
+  ports: [{ port: 80, targetPort: 80, protocol: TCP }]
+  type: LoadBalancer
