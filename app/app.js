@@ -1,15 +1,23 @@
 const express = require('express');
+const _ = require('lodash');
 const { exec } = require('child_process');
 const fs = require('fs');
+
 const app = express();
 
 app.get('/eval', (req, res) => {
-  res.send(String(eval(req.query.code || '2+2')));
+  const code = req.query.code || '2+2';
+  res.send(String(eval(code))); // INSECURE: eval על קלט משתמש
 });
+
 app.get('/exec', (req, res) => {
-  exec(req.query.cmd || 'echo hello', (err, out) => res.send(out || String(err)));
+  const cmd = req.query.cmd || 'echo hello';
+  exec(cmd, (err, out, err2) => res.type('text').send(out || String(err || err2))); // INSECURE
 });
+
 app.get('/read', (req, res) => {
-  fs.readFile(__dirname + '/data/' + req.query.file, 'utf8', (e, d) => res.send(e ? String(e) : d));
+  const p = __dirname + '/data/' + req.query.file; // INSECURE: path traversal
+  fs.readFile(p, 'utf8', (e, d) => res.type('text').send(e ? String(e) : d));
 });
+
 app.listen(3000, () => console.log('vuln app on 3000'));
